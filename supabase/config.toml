@@ -1,0 +1,7 @@
+project_id = "qmqymoxbfsdgdeflasmh"
+
+[functions.classify-complaint]
+verify_jwt = true
+
+[functions.generate-reply]
+verify_jwt = true
