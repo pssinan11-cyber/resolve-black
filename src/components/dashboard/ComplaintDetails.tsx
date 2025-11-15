@@ -8,6 +8,7 @@ import { ArrowLeft, Send, Star } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
+import AttachmentsList from "./AttachmentsList";
 
 interface ComplaintDetailsProps {
   complaint: any;
@@ -162,6 +163,8 @@ const ComplaintDetails = ({ complaint, onBack }: ComplaintDetailsProps) => {
               ))}
             </div>
           )}
+
+          <AttachmentsList complaintId={complaint.id} />
         </CardContent>
       </Card>
 

@@ -8,6 +8,7 @@ import { ArrowLeft, Send, Sparkles, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AttachmentsList from "./AttachmentsList";
 
 interface AdminComplaintDetailsProps {
   complaint: any;
@@ -133,6 +134,8 @@ const AdminComplaintDetails = ({ complaint, onBack, onUpdate }: AdminComplaintDe
               </div>
             </div>
           )}
+
+          <AttachmentsList complaintId={complaint.id} />
         </CardContent>
       </Card>
 
