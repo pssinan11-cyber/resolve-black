@@ -19,16 +19,23 @@ const Dashboard = () => {
         return;
       }
 
-      // Get user role
-      const { data: roleData } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.user.id)
-        .single();
+      // Server-side role validation
+      try {
+        const { data, error } = await supabase.functions.invoke('validate-role');
+        
+        if (error) {
+          console.error("Role validation error:", error);
+          setLoading(false);
+          return;
+        }
 
-      if (roleData) {
-        setUserRole(roleData.role);
+        if (data?.role) {
+          setUserRole(data.role);
+        }
+      } catch (error) {
+        console.error("Failed to validate role:", error);
       }
+      
       setLoading(false);
     };
 
