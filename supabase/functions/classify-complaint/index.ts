@@ -1,9 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.81.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const VALID_SEVERITIES = ['low', 'medium', 'high', 'urgent'];
+const MAX_TITLE_LENGTH = 200;
+const MAX_DESCRIPTION_LENGTH = 5000;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -11,7 +16,79 @@ serve(async (req) => {
   }
 
   try {
+    // Get authenticated user
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      console.error('Auth error:', userError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { title, description, severity } = await req.json();
+
+    // Input validation
+    if (!title || typeof title !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'Title is required and must be a string' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!description || typeof description !== 'string') {
+      return new Response(
+        JSON.stringify({ error: 'Description is required and must be a string' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!severity || !VALID_SEVERITIES.includes(severity)) {
+      return new Response(
+        JSON.stringify({ error: `Severity must be one of: ${VALID_SEVERITIES.join(', ')}` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Length validation
+    if (title.length > MAX_TITLE_LENGTH) {
+      return new Response(
+        JSON.stringify({ error: `Title must not exceed ${MAX_TITLE_LENGTH} characters` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (description.length > MAX_DESCRIPTION_LENGTH) {
+      return new Response(
+        JSON.stringify({ error: `Description must not exceed ${MAX_DESCRIPTION_LENGTH} characters` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Sanitize inputs (trim whitespace)
+    const sanitizedTitle = title.trim();
+    const sanitizedDescription = description.trim();
+
+    if (!sanitizedTitle || !sanitizedDescription) {
+      return new Response(
+        JSON.stringify({ error: 'Title and description cannot be empty or only whitespace' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -29,7 +106,7 @@ serve(async (req) => {
           },
           {
             role: 'user',
-            content: `Classify this complaint:\nTitle: ${title}\nDescription: ${description}\nSeverity: ${severity}`
+            content: `Classify this complaint:\nTitle: ${sanitizedTitle}\nDescription: ${sanitizedDescription}\nSeverity: ${severity}`
           }
         ],
         tools: [{
