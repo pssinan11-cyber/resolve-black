@@ -77,11 +77,7 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from("complaint-attachments")
-        .getPublicUrl(filePath);
-
+      // Store file path (not URL) for signed URL generation
       // Create attachment record
       const { error: dbError } = await supabase
         .from("attachments")
@@ -90,7 +86,7 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
           file_name: file.name,
           file_type: file.type,
           file_size: file.size,
-          file_url: publicUrl,
+          file_url: filePath, // Store path instead of URL
           uploaded_by: userId,
         });
 
