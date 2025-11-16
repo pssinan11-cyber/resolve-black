@@ -118,7 +118,7 @@ serve(async (req) => {
           model: 'google/gemini-2.5-flash',
           messages: [{
             role: 'user',
-            content: `Write a ${tone} reply to this complaint:\n\nTitle: ${complaint.title}\nDescription: ${complaint.description}\n\nReply (2-3 sentences max):`
+            content: `Write a ${tone} reply to this complaint:\n\nTitle: ${sanitizedComplaint.title}\nDescription: ${sanitizedComplaint.description}\n\nReply (2-3 sentences max):`
           }],
         }),
       });
