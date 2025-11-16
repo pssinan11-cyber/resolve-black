@@ -11,9 +11,14 @@ const Index = () => {
       <header className="border-b-2 border-border">
         <div className="container mx-auto px-4 py-6 flex justify-between items-center">
           <h1 className="text-3xl font-bold">Brototype Resolve</h1>
-          <Button onClick={() => navigate("/auth")} size="lg" className="font-semibold">
-            Get Started
-          </Button>
+          <div className="flex gap-3">
+            <Button onClick={() => navigate("/student-auth")} variant="outline" size="lg" className="font-semibold border-2">
+              Student Login
+            </Button>
+            <Button onClick={() => navigate("/admin-auth")} size="lg" className="font-semibold">
+              Admin Login
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -28,16 +33,16 @@ const Index = () => {
               with AI-powered insights. Inspired by the best of Slack, Trello, and Zendesk.
             </p>
             <div className="flex gap-4 justify-center pt-4">
-              <Button onClick={() => navigate("/auth")} size="lg" className="text-lg px-8 font-semibold">
-                Sign In
+              <Button onClick={() => navigate("/student-auth")} size="lg" className="text-lg px-8 font-semibold">
+                Student Sign In
               </Button>
               <Button
-                onClick={() => navigate("/auth")}
+                onClick={() => navigate("/admin-auth")}
                 variant="outline"
                 size="lg"
                 className="text-lg px-8 border-2"
               >
-                Create Account
+                Admin Sign In
               </Button>
             </div>
           </div>
