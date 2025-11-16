@@ -12,6 +12,7 @@ interface AttachmentsListProps {
 const AttachmentsList = ({ complaintId }: AttachmentsListProps) => {
   const [attachments, setAttachments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchAttachments();
@@ -27,6 +28,18 @@ const AttachmentsList = ({ complaintId }: AttachmentsListProps) => {
 
       if (error) throw error;
       setAttachments(data || []);
+      
+      // Generate signed URLs for all attachments
+      if (data && data.length > 0) {
+        const urlsMap: Record<string, string> = {};
+        await Promise.all(
+          data.map(async (attachment) => {
+            const url = await getFileUrl(attachment.file_url);
+            urlsMap[attachment.id] = url;
+          })
+        );
+        setSignedUrls(urlsMap);
+      }
     } catch (error) {
       console.error("Error fetching attachments:", error);
     } finally {
@@ -34,8 +47,17 @@ const AttachmentsList = ({ complaintId }: AttachmentsListProps) => {
     }
   };
 
-  const getFileUrl = (fileUrl: string) => {
-    return fileUrl;
+  const getFileUrl = async (filePath: string) => {
+    const { data, error } = await supabase.storage
+      .from("complaint-attachments")
+      .createSignedUrl(filePath, 3600); // 1 hour expiration
+    
+    if (error) {
+      console.error("Error creating signed URL:", error);
+      return "";
+    }
+    
+    return data.signedUrl;
   };
 
   const isImage = (fileType: string) => {
@@ -59,30 +81,32 @@ const AttachmentsList = ({ complaintId }: AttachmentsListProps) => {
         <h3 className="font-semibold">Attachments ({attachments.length})</h3>
       </div>
       <div className="grid gap-3">
-        {attachments.map((attachment) => (
-          <Card key={attachment.id} className="border-2 hover:border-foreground transition-colors">
-            <CardContent className="p-4">
-              <a
-                href={getFileUrl(attachment.file_url)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 group"
-              >
-                <div className="flex-shrink-0">
-                  {isImage(attachment.file_type) ? (
-                    <div className="w-12 h-12 border-2 border-border rounded overflow-hidden bg-muted flex items-center justify-center">
-                      <img
-                        src={getFileUrl(attachment.file_url)}
-                        alt={attachment.file_name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-12 h-12 border-2 border-border rounded flex items-center justify-center bg-muted">
-                      <FileText className="h-6 w-6" />
-                    </div>
-                  )}
-                </div>
+        {attachments.map((attachment) => {
+          const signedUrl = signedUrls[attachment.id];
+          return (
+            <Card key={attachment.id} className="border-2 hover:border-foreground transition-colors">
+              <CardContent className="p-4">
+                <a
+                  href={signedUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 group"
+                >
+                  <div className="flex-shrink-0">
+                    {isImage(attachment.file_type) ? (
+                      <div className="w-12 h-12 border-2 border-border rounded overflow-hidden bg-muted flex items-center justify-center">
+                        <img
+                          src={signedUrl}
+                          alt={attachment.file_name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 border-2 border-border rounded flex items-center justify-center bg-muted">
+                        <FileText className="h-6 w-6" />
+                      </div>
+                    )}
+                  </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate group-hover:underline">
                     {attachment.file_name}
@@ -91,11 +115,12 @@ const AttachmentsList = ({ complaintId }: AttachmentsListProps) => {
                     {formatFileSize(attachment.file_size)} • {format(new Date(attachment.created_at), "MMM d, yyyy")}
                   </p>
                 </div>
-                <ExternalLink className="h-4 w-4 flex-shrink-0 opacity-50 group-hover:opacity-100 transition-opacity" />
-              </a>
-            </CardContent>
-          </Card>
-        ))}
+                  <ExternalLink className="h-4 w-4 flex-shrink-0 opacity-50 group-hover:opacity-100 transition-opacity" />
+                </a>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
