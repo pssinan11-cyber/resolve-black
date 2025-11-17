@@ -15,9 +15,25 @@ serve(async (req) => {
   }
 
   try {
+    // Create service role client for logging
+    const supabaseServiceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    
     // Get authenticated user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      // Log failed authentication attempt
+      await supabaseServiceClient.rpc('log_security_event', {
+        _event_type: 'failed_auth',
+        _severity: 'medium',
+        _ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
+        _user_agent: req.headers.get('user-agent'),
+        _endpoint: '/generate-reply',
+        _details: { reason: 'missing_auth_header' }
+      });
+      
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -33,6 +49,18 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       console.error('Auth error:', userError);
+      
+      // Log failed authentication
+      await supabaseServiceClient.rpc('log_security_event', {
+        _event_type: 'failed_auth',
+        _severity: 'high',
+        _user_id: null,
+        _ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
+        _user_agent: req.headers.get('user-agent'),
+        _endpoint: '/generate-reply',
+        _details: { error: userError?.message || 'invalid_token' }
+      });
+      
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -48,6 +76,22 @@ serve(async (req) => {
 
     if (roleError || !roleData || roleData.role !== 'admin') {
       console.error('Authorization failed:', roleError || 'Not an admin');
+      
+      // Log failed authorization (privilege escalation attempt)
+      await supabaseServiceClient.rpc('log_security_event', {
+        _event_type: 'failed_authz',
+        _severity: 'high',
+        _user_id: user.id,
+        _ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
+        _user_agent: req.headers.get('user-agent'),
+        _endpoint: '/generate-reply',
+        _details: { 
+          reason: 'insufficient_permissions',
+          required_role: 'admin',
+          error: roleError?.message
+        }
+      });
+      
       return new Response(
         JSON.stringify({ error: 'Forbidden: Admin access required' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

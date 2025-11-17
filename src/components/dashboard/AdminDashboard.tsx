@@ -6,6 +6,7 @@ import { LogOut, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import AdminComplaintCard from "./AdminComplaintCard";
 import AdminAnalytics from "./AdminAnalytics";
+import { SecurityLogs } from "./SecurityLogs";
 
 const AdminDashboard = () => {
   const [complaints, setComplaints] = useState<any[]>([]);
@@ -100,6 +101,10 @@ const AdminDashboard = () => {
 
       <main className="container mx-auto px-4 py-8">
         <AdminAnalytics complaints={complaints} />
+
+        <div className="my-8">
+          <SecurityLogs />
+        </div>
 
         {urgentComplaints.length > 0 && (
           <Card className="mb-8 border-2 border-foreground bg-muted">

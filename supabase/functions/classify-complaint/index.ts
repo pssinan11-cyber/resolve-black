@@ -16,9 +16,25 @@ serve(async (req) => {
   }
 
   try {
+    // Create service role client for logging
+    const supabaseServiceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+    
     // Get authenticated user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      // Log failed authentication attempt
+      await supabaseServiceClient.rpc('log_security_event', {
+        _event_type: 'failed_auth',
+        _severity: 'medium',
+        _ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
+        _user_agent: req.headers.get('user-agent'),
+        _endpoint: '/classify-complaint',
+        _details: { reason: 'missing_auth_header' }
+      });
+      
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -34,6 +50,18 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     if (userError || !user) {
       console.error('Auth error:', userError);
+      
+      // Log failed authentication
+      await supabaseServiceClient.rpc('log_security_event', {
+        _event_type: 'failed_auth',
+        _severity: 'high',
+        _user_id: null,
+        _ip_address: req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip'),
+        _user_agent: req.headers.get('user-agent'),
+        _endpoint: '/classify-complaint',
+        _details: { error: userError?.message || 'invalid_token' }
+      });
+      
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
