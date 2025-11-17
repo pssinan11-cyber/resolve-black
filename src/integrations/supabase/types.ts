@@ -315,6 +315,60 @@ export type Database = {
         }
         Relationships: []
       }
+      suspicious_activities: {
+        Row: {
+          activity_type: string
+          created_at: string
+          details: Json | null
+          detection_time: string
+          event_count: number
+          id: string
+          ip_address: string | null
+          notes: string | null
+          resolved: boolean
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          time_window_end: string
+          time_window_start: string
+          user_id: string | null
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          details?: Json | null
+          detection_time?: string
+          event_count: number
+          id?: string
+          ip_address?: string | null
+          notes?: string | null
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+          time_window_end: string
+          time_window_start: string
+          user_id?: string | null
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          details?: Json | null
+          detection_time?: string
+          event_count?: number
+          id?: string
+          ip_address?: string | null
+          notes?: string | null
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          time_window_end?: string
+          time_window_start?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -341,6 +395,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      detect_suspicious_activity: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
