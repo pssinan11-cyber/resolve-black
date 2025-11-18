@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import AdminComplaintCard from "./AdminComplaintCard";
 import AdminAnalytics from "./AdminAnalytics";
 import { SecurityLogs } from "./SecurityLogs";
+import SuspiciousActivities from "./SuspiciousActivities";
 
 const AdminDashboard = () => {
   const [complaints, setComplaints] = useState<any[]>([]);
@@ -104,6 +105,10 @@ const AdminDashboard = () => {
 
         <div className="my-8">
           <SecurityLogs />
+        </div>
+
+        <div className="my-8">
+          <SuspiciousActivities />
         </div>
 
         {urgentComplaints.length > 0 && (
