@@ -71,11 +71,12 @@ const AdminAuth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 animate-fade-in">
-      <Card className="w-full max-w-md border-2 border-border animate-scale-in">
-        <CardHeader className="space-y-1">
-          <div className="flex justify-center mb-2 animate-scale-in">
-            <Shield className="h-12 w-12" />
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-background via-muted/5 to-background animate-gradient-shift bg-[length:200%_200%]" />
+      <Card className="w-full max-w-md border-2 border-border animate-scale-in relative z-10 transition-transform duration-300">
+        <CardHeader className="space-y-1 animate-fade-in">
+          <div className="flex justify-center mb-2">
+            <Shield className="h-12 w-12 animate-pulse-scale" />
           </div>
           <CardTitle className="text-3xl font-bold text-center">Admin Portal</CardTitle>
           <CardDescription className="text-center">
@@ -83,9 +84,9 @@ const AdminAuth = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleAuth} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Admin Email</Label>
+          <form onSubmit={handleAuth} className="space-y-5">
+            <div className="space-y-2 animate-slide-up" style={{ animationDelay: "0ms" }}>
+              <Label htmlFor="email" className="transition-all duration-200">Admin Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -93,11 +94,11 @@ const AdminAuth = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="border-2"
+                className="border-2 transition-all duration-200 focus:scale-[1.02] focus:border-primary"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Admin Password</Label>
+            <div className="space-y-2 animate-slide-up" style={{ animationDelay: "100ms" }}>
+              <Label htmlFor="password" className="transition-all duration-200">Admin Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -105,18 +106,19 @@ const AdminAuth = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="border-2"
+                className="border-2 transition-all duration-200 focus:scale-[1.02] focus:border-primary"
               />
             </div>
             <Button 
               type="submit" 
-              className="w-full font-semibold hover-scale" 
+              className="w-full font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-95 disabled:opacity-50 animate-slide-up" 
+              style={{ animationDelay: "200ms" }}
               disabled={loading}
             >
               {loading ? "Authenticating..." : "Admin Sign In"}
             </Button>
           </form>
-          <div className="mt-4 text-center text-xs text-muted-foreground">
+          <div className="mt-4 text-center text-xs text-muted-foreground animate-fade-in" style={{ animationDelay: "300ms" }}>
             Admin accounts are created by system administrators
           </div>
         </CardContent>
