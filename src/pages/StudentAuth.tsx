@@ -100,19 +100,20 @@ const StudentAuth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 animate-fade-in">
-      <Card className="w-full max-w-md border-2 border-border animate-scale-in">
-        <CardHeader className="space-y-1">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-background via-muted/5 to-background animate-gradient-shift bg-[length:200%_200%]" />
+      <Card className="w-full max-w-md border-2 border-border animate-scale-in relative z-10 transition-transform duration-300">
+        <CardHeader className="space-y-1 animate-fade-in">
           <CardTitle className="text-3xl font-bold text-center">Student Portal</CardTitle>
           <CardDescription className="text-center">
             {isLogin ? "Sign in to your student account" : "Create a new student account"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleAuth} className="space-y-4">
+          <form onSubmit={handleAuth} className="space-y-5">
             {!isLogin && (
-              <div className="space-y-2 animate-fade-in">
-                <Label htmlFor="fullName">Full Name</Label>
+              <div className="space-y-2 animate-slide-up" style={{ animationDelay: "0ms" }}>
+                <Label htmlFor="fullName" className="transition-all duration-200">Full Name</Label>
                 <Input
                   id="fullName"
                   type="text"
@@ -120,12 +121,12 @@ const StudentAuth = () => {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required={!isLogin}
-                  className="border-2"
+                  className="border-2 transition-all duration-200 focus:scale-[1.02] focus:border-primary"
                 />
               </div>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+            <div className="space-y-2 animate-slide-up" style={{ animationDelay: isLogin ? "0ms" : "100ms" }}>
+              <Label htmlFor="email" className="transition-all duration-200">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -133,11 +134,11 @@ const StudentAuth = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="border-2"
+                className="border-2 transition-all duration-200 focus:scale-[1.02] focus:border-primary"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+            <div className="space-y-2 animate-slide-up" style={{ animationDelay: isLogin ? "100ms" : "200ms" }}>
+              <Label htmlFor="password" className="transition-all duration-200">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -145,22 +146,23 @@ const StudentAuth = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="border-2"
+                className="border-2 transition-all duration-200 focus:scale-[1.02] focus:border-primary"
               />
             </div>
             <Button 
               type="submit" 
-              className="w-full font-semibold hover-scale" 
+              className="w-full font-semibold transition-all duration-200 hover:scale-[1.02] active:scale-95 disabled:opacity-50 animate-slide-up" 
+              style={{ animationDelay: isLogin ? "200ms" : "300ms" }}
               disabled={loading}
             >
               {loading ? "Please wait..." : (isLogin ? "Sign In" : "Sign Up")}
             </Button>
           </form>
-          <div className="mt-4 text-center">
+          <div className="mt-4 text-center animate-fade-in" style={{ animationDelay: isLogin ? "300ms" : "400ms" }}>
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors underline hover-scale"
+              className="text-sm text-muted-foreground hover:text-foreground transition-all duration-200 underline hover:scale-105 inline-block"
             >
               {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
             </button>
