@@ -71,10 +71,10 @@ const AdminAuth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md border-2 border-border">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 animate-fade-in">
+      <Card className="w-full max-w-md border-2 border-border animate-scale-in">
         <CardHeader className="space-y-1">
-          <div className="flex justify-center mb-2">
+          <div className="flex justify-center mb-2 animate-scale-in">
             <Shield className="h-12 w-12" />
           </div>
           <CardTitle className="text-3xl font-bold text-center">Admin Portal</CardTitle>
@@ -110,7 +110,7 @@ const AdminAuth = () => {
             </div>
             <Button 
               type="submit" 
-              className="w-full font-semibold" 
+              className="w-full font-semibold hover-scale" 
               disabled={loading}
             >
               {loading ? "Authenticating..." : "Admin Sign In"}
