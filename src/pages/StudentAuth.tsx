@@ -100,8 +100,8 @@ const StudentAuth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md border-2 border-border">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 animate-fade-in">
+      <Card className="w-full max-w-md border-2 border-border animate-scale-in">
         <CardHeader className="space-y-1">
           <CardTitle className="text-3xl font-bold text-center">Student Portal</CardTitle>
           <CardDescription className="text-center">
@@ -111,7 +111,7 @@ const StudentAuth = () => {
         <CardContent>
           <form onSubmit={handleAuth} className="space-y-4">
             {!isLogin && (
-              <div className="space-y-2">
+              <div className="space-y-2 animate-fade-in">
                 <Label htmlFor="fullName">Full Name</Label>
                 <Input
                   id="fullName"
@@ -150,7 +150,7 @@ const StudentAuth = () => {
             </div>
             <Button 
               type="submit" 
-              className="w-full font-semibold" 
+              className="w-full font-semibold hover-scale" 
               disabled={loading}
             >
               {loading ? "Please wait..." : (isLogin ? "Sign In" : "Sign Up")}
@@ -160,7 +160,7 @@ const StudentAuth = () => {
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors underline"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors underline hover-scale"
             >
               {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
             </button>
