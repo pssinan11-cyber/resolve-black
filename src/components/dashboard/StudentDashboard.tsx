@@ -48,7 +48,7 @@ const StudentDashboard = () => {
         .from("profiles")
         .select("*")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
       setProfile(profileData);
 
