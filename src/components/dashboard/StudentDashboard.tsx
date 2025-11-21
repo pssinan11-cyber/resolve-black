@@ -55,11 +55,7 @@ const StudentDashboard = () => {
       // Fetch complaints
       const { data: complaintsData, error } = await supabase
         .from("complaints")
-        .select(`
-          *,
-          profiles:student_id(full_name),
-          comments(count)
-        `)
+        .select("*")
         .eq("student_id", user.id)
         .order("created_at", { ascending: false });
 

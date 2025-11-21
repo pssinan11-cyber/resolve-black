@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogOut, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import AdminComplaintCard from "./AdminComplaintCard";
-import AdminAnalytics from "./AdminAnalytics";
+import AdminAnalyticsEnhanced from "./AdminAnalyticsEnhanced";
 import { SecurityLogs } from "./SecurityLogs";
 import SuspiciousActivities from "./SuspiciousActivities";
 
@@ -53,16 +53,31 @@ const AdminDashboard = () => {
 
       setProfile(profileData);
 
-      // Fetch all complaints
+      // Fetch all complaints with student profiles
       const { data: complaintsData, error } = await supabase
         .from("complaints")
-        .select(`
-          *,
-          profiles:student_id(full_name),
-          comments(count)
-        `)
+        .select("*")
         .order("priority_score", { ascending: false })
         .order("created_at", { ascending: false });
+      
+      // Fetch student profiles separately
+      if (complaintsData && complaintsData.length > 0) {
+        const studentIds = [...new Set(complaintsData.map(c => c.student_id))];
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name")
+          .in("id", studentIds);
+        
+        // Merge profiles into complaints
+        if (profiles) {
+          complaintsData.forEach(complaint => {
+            const profile = profiles.find(p => p.id === complaint.student_id);
+            if (profile) {
+              (complaint as any).student_name = profile.full_name;
+            }
+          });
+        }
+      }
 
       if (error) throw error;
       setComplaints(complaintsData || []);
@@ -101,7 +116,7 @@ const AdminDashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <AdminAnalytics complaints={complaints} />
+        <AdminAnalyticsEnhanced complaints={complaints} />
 
         <div className="my-8">
           <SecurityLogs />
