@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { MessageSquare, Clock, Tag } from "lucide-react";
 import { format } from "date-fns";
 import ComplaintDetails from "./ComplaintDetails";
+import confetti from "canvas-confetti";
 
 interface ComplaintCardProps {
   complaint: any;
@@ -27,6 +28,44 @@ const statusLabels: Record<string, string> = {
 
 const ComplaintCard = ({ complaint }: ComplaintCardProps) => {
   const [showDetails, setShowDetails] = useState(false);
+  const previousStatusRef = useRef(complaint.status);
+  const hasShownConfettiRef = useRef(false);
+
+  useEffect(() => {
+    // Trigger confetti when complaint becomes resolved or closed
+    if (
+      !hasShownConfettiRef.current &&
+      previousStatusRef.current !== complaint.status &&
+      (complaint.status === 'resolved' || complaint.status === 'closed')
+    ) {
+      hasShownConfettiRef.current = true;
+      
+      // Monochrome confetti animation
+      const count = 120;
+      const defaults = {
+        origin: { y: 0.7 },
+        colors: ['#000000', '#FFFFFF', '#666666'],
+        shapes: ['circle', 'square'],
+        scalar: 1.1,
+      };
+
+      function fire(particleRatio: number, opts: any) {
+        confetti({
+          ...defaults,
+          ...opts,
+          particleCount: Math.floor(count * particleRatio),
+        });
+      }
+
+      fire(0.25, { spread: 26, startVelocity: 55 });
+      fire(0.2, { spread: 60 });
+      fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+      fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+      fire(0.1, { spread: 120, startVelocity: 45 });
+    }
+    
+    previousStatusRef.current = complaint.status;
+  }, [complaint.status]);
 
   const getSeverityClass = (severity: string) => {
     const classes: Record<string, string> = {
@@ -43,7 +82,11 @@ const ComplaintCard = ({ complaint }: ComplaintCardProps) => {
   }
 
   return (
-    <Card className="border-2 border-border hover:shadow-lg transition-shadow">
+    <Card className={`border-2 border-border hover:shadow-lg transition-all duration-500 ${
+      (complaint.status === 'resolved' || complaint.status === 'closed') 
+        ? 'bg-muted/30 animate-fade-in' 
+        : ''
+    }`}>
       <CardHeader>
         <div className="flex justify-between items-start gap-4">
           <div className="flex-1">
