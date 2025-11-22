@@ -17,9 +17,14 @@ interface AdminComplaintCardProps {
 const AdminComplaintCard = ({ complaint, onUpdate }: AdminComplaintCardProps) => {
   const [showDetails, setShowDetails] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [isResolving, setIsResolving] = useState(false);
 
   const handleStatusChange = async (newStatus: string) => {
     setUpdating(true);
+    if (newStatus === "resolved" || newStatus === "closed") {
+      setIsResolving(true);
+    }
+    
     try {
       const updates: any = { status: newStatus };
       if (newStatus === "resolved" || newStatus === "closed") {
@@ -33,10 +38,23 @@ const AdminComplaintCard = ({ complaint, onUpdate }: AdminComplaintCardProps) =>
 
       if (error) throw error;
 
-      toast.success(`Status updated to ${newStatus}`);
-      onUpdate();
+      if (newStatus === "resolved") {
+        toast.success("Complaint resolved successfully! 🎉", {
+          duration: 3000,
+        });
+        
+        // Keep animation visible for a moment before updating
+        setTimeout(() => {
+          setIsResolving(false);
+          onUpdate();
+        }, 1000);
+      } else {
+        toast.success(`Status updated to ${newStatus}`);
+        onUpdate();
+      }
     } catch (error: any) {
       toast.error("Failed to update status");
+      setIsResolving(false);
     } finally {
       setUpdating(false);
     }
@@ -63,7 +81,9 @@ const AdminComplaintCard = ({ complaint, onUpdate }: AdminComplaintCardProps) =>
   }
 
   return (
-    <Card className="border-2 border-border hover:shadow-lg transition-shadow">
+    <Card className={`border-2 border-border hover:shadow-lg transition-all duration-500 ${
+      isResolving ? 'animate-pulse scale-[0.98] opacity-70' : ''
+    }`}>
       <CardHeader>
         <div className="flex justify-between items-start gap-4">
           <div className="flex-1">
@@ -131,10 +151,10 @@ const AdminComplaintCard = ({ complaint, onUpdate }: AdminComplaintCardProps) =>
             <Button
               onClick={() => handleStatusChange("resolved")}
               disabled={updating}
-              className="bg-foreground text-background hover:bg-foreground/90"
+              className="bg-foreground text-background hover:bg-foreground/90 hover:scale-105 active:scale-95 transition-transform"
             >
-              <CheckCircle2 className="h-4 w-4 mr-2" />
-              Mark Resolved
+              <CheckCircle2 className={`h-4 w-4 mr-2 ${updating ? 'animate-spin' : ''}`} />
+              {updating ? 'Resolving...' : 'Mark Resolved'}
             </Button>
           )}
 
