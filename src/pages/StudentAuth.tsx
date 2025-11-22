@@ -226,13 +226,13 @@ const StudentAuth = () => {
           </form>
           <div className="mt-4 space-y-2 text-center animate-fade-in" style={{ animationDelay: isLogin ? "300ms" : "400ms" }}>
             {isLogin && (
-              <button
-                type="button"
-                onClick={() => setShowForgotPassword(true)}
-                className="text-sm text-muted-foreground hover:text-foreground transition-all duration-200 underline hover:scale-105 inline-block block w-full"
-              >
-                Forgot password?
-              </button>
+            <button
+              type="button"
+              onClick={() => setShowForgotPassword(true)}
+              className="text-sm text-muted-foreground hover:text-foreground transition-all duration-200 underline hover:scale-105 block w-full"
+            >
+              Forgot password?
+            </button>
             )}
             <button
               type="button"
