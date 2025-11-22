@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { z } from "zod";
 import { Eye, EyeOff } from "lucide-react";
+import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
 
 const authSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -22,6 +23,7 @@ const StudentAuth = () => {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const navigate = useNavigate();
 
   const getPasswordStrength = (pwd: string): { strength: 'weak' | 'medium' | 'strong'; score: number } => {
@@ -214,7 +216,16 @@ const StudentAuth = () => {
               {loading ? "Please wait..." : (isLogin ? "Sign In" : "Sign Up")}
             </Button>
           </form>
-          <div className="mt-4 text-center animate-fade-in" style={{ animationDelay: isLogin ? "300ms" : "400ms" }}>
+          <div className="mt-4 space-y-2 text-center animate-fade-in" style={{ animationDelay: isLogin ? "300ms" : "400ms" }}>
+            {isLogin && (
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(true)}
+                className="text-sm text-muted-foreground hover:text-foreground transition-all duration-200 underline hover:scale-105 inline-block block w-full"
+              >
+                Forgot password?
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
@@ -225,6 +236,7 @@ const StudentAuth = () => {
           </div>
         </CardContent>
       </Card>
+      <ForgotPasswordDialog open={showForgotPassword} onOpenChange={setShowForgotPassword} />
     </div>
   );
 };

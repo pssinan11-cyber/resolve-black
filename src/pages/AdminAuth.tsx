@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { z } from "zod";
 import { Shield, Eye, EyeOff } from "lucide-react";
+import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
 
 const authSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -19,6 +20,7 @@ const AdminAuth = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -129,11 +131,21 @@ const AdminAuth = () => {
               {loading ? "Authenticating..." : "Admin Sign In"}
             </Button>
           </form>
-          <div className="mt-4 text-center text-xs text-muted-foreground animate-fade-in" style={{ animationDelay: "300ms" }}>
-            Admin accounts are created by system administrators
+          <div className="mt-4 space-y-2 text-center animate-fade-in" style={{ animationDelay: "300ms" }}>
+            <button
+              type="button"
+              onClick={() => setShowForgotPassword(true)}
+              className="text-sm text-muted-foreground hover:text-foreground transition-all duration-200 underline hover:scale-105 inline-block"
+            >
+              Forgot password?
+            </button>
+            <p className="text-xs text-muted-foreground">
+              Admin accounts are created by system administrators
+            </p>
           </div>
         </CardContent>
       </Card>
+      <ForgotPasswordDialog open={showForgotPassword} onOpenChange={setShowForgotPassword} />
     </div>
   );
 };
