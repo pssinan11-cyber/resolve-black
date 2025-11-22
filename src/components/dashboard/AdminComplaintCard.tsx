@@ -127,12 +127,22 @@ const AdminComplaintCard = ({ complaint, onUpdate }: AdminComplaintCardProps) =>
             </SelectContent>
           </Select>
 
+          {complaint.status !== "resolved" && complaint.status !== "closed" && (
+            <Button
+              onClick={() => handleStatusChange("resolved")}
+              disabled={updating}
+              className="bg-foreground text-background hover:bg-foreground/90"
+            >
+              <CheckCircle2 className="h-4 w-4 mr-2" />
+              Mark Resolved
+            </Button>
+          )}
+
           <Button
             onClick={() => setShowDetails(true)}
             variant="outline"
             className="border-2"
           >
-            <CheckCircle2 className="h-4 w-4 mr-2" />
             Manage
           </Button>
         </div>
