@@ -86,7 +86,7 @@ const StudentAuth = () => {
           toast.success("Welcome back!");
         }
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -104,7 +104,15 @@ const StudentAuth = () => {
             toast.error(error.message);
           }
         } else {
-          toast.success("Account created successfully!");
+          if (data?.user && !data.user.email_confirmed_at) {
+            toast.success("Account created! Please check your email to verify your account.");
+            // Redirect to verify email page
+            setTimeout(() => {
+              navigate("/verify-email");
+            }, 1500);
+          } else {
+            toast.success("Account created successfully!");
+          }
         }
       }
     } catch (error) {

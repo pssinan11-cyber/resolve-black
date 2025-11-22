@@ -15,7 +15,14 @@ const Dashboard = () => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        navigate("/auth");
+        navigate("/student-auth");
+        return;
+      }
+
+      // Check if email is verified
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && !user.email_confirmed_at) {
+        navigate("/verify-email");
         return;
       }
 
@@ -43,7 +50,7 @@ const Dashboard = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!session) {
-        navigate("/auth");
+        navigate("/student-auth");
       }
     });
 
