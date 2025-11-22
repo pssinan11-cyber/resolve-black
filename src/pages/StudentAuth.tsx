@@ -24,6 +24,21 @@ const StudentAuth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
+  const getPasswordStrength = (pwd: string): { strength: 'weak' | 'medium' | 'strong'; score: number } => {
+    let score = 0;
+    if (pwd.length >= 8) score += 25;
+    if (pwd.length >= 12) score += 25;
+    if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) score += 20;
+    if (/\d/.test(pwd)) score += 15;
+    if (/[^a-zA-Z0-9]/.test(pwd)) score += 15;
+    
+    if (score < 40) return { strength: 'weak', score };
+    if (score < 75) return { strength: 'medium', score };
+    return { strength: 'strong', score };
+  };
+
+  const passwordStrength = !isLogin ? getPasswordStrength(password) : null;
+
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -160,6 +175,35 @@ const StudentAuth = () => {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
+              {!isLogin && password && passwordStrength && (
+                <div className="space-y-1.5 animate-fade-in">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Password strength:</span>
+                    <span className={`font-medium transition-all duration-300 ${
+                      passwordStrength.strength === 'weak' ? 'text-muted-foreground' :
+                      passwordStrength.strength === 'medium' ? 'text-foreground/70' :
+                      'text-foreground'
+                    }`}>
+                      {passwordStrength.strength.charAt(0).toUpperCase() + passwordStrength.strength.slice(1)}
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full transition-all duration-300 ease-out ${
+                        passwordStrength.strength === 'weak' ? 'bg-foreground/30' :
+                        passwordStrength.strength === 'medium' ? 'bg-foreground/60' :
+                        'bg-foreground'
+                      }`}
+                      style={{ width: `${passwordStrength.score}%` }}
+                    />
+                  </div>
+                  {passwordStrength.strength === 'weak' && (
+                    <p className="text-xs text-muted-foreground">
+                      Use 8+ characters with mixed case, numbers & symbols
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
             <Button 
               type="submit" 
