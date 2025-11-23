@@ -2,17 +2,23 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, AlertTriangle } from "lucide-react";
+import { LogOut, AlertTriangle, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import AdminComplaintCard from "./AdminComplaintCard";
 import AdminAnalyticsEnhanced from "./AdminAnalyticsEnhanced";
 import { SecurityLogs } from "./SecurityLogs";
 import SuspiciousActivities from "./SuspiciousActivities";
+import { useNotificationSound } from "@/hooks/useNotificationSound";
 
 const AdminDashboard = () => {
   const [complaints, setComplaints] = useState<any[]>([]);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    const saved = localStorage.getItem('adminSoundEnabled');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const { playSound } = useNotificationSound();
 
   useEffect(() => {
     fetchData();
@@ -44,6 +50,17 @@ const AdminDashboard = () => {
             low: 'ℹ️'
           };
           
+          // Play sound based on severity
+          if (soundEnabled) {
+            if (newComplaint.severity === 'urgent') {
+              playSound('urgent');
+            } else if (newComplaint.severity === 'high') {
+              playSound('high');
+            } else {
+              playSound('info');
+            }
+          }
+          
           toast.info(
             `${severityEmoji[newComplaint.severity]} New ${newComplaint.severity} complaint from ${profile?.full_name || 'Student'}`,
             { duration: 5000 }
@@ -65,6 +82,9 @@ const AdminDashboard = () => {
           
           // Show notification for severity escalation
           if (updatedComplaint.severity === 'urgent' && oldComplaint.severity !== 'urgent') {
+            if (soundEnabled) {
+              playSound('urgent');
+            }
             toast.warning(
               `🚨 Complaint escalated to URGENT: "${updatedComplaint.title}"`,
               { duration: 5000 }
@@ -93,9 +113,15 @@ const AdminDashboard = () => {
           if (!newComment.is_admin_reply) {
             const { data: complaint } = await supabase
               .from('complaints')
-              .select('title')
+              .select('title, severity')
               .eq('id', newComment.complaint_id)
               .single();
+            
+            if (soundEnabled && complaint?.severity === 'urgent') {
+              playSound('high');
+            } else if (soundEnabled) {
+              playSound('info');
+            }
             
             toast.info(
               `💬 New student comment on: "${complaint?.title || 'a complaint'}"`,
@@ -169,6 +195,13 @@ const AdminDashboard = () => {
     toast.success("Logged out successfully");
   };
 
+  const toggleSound = () => {
+    const newValue = !soundEnabled;
+    setSoundEnabled(newValue);
+    localStorage.setItem('adminSoundEnabled', JSON.stringify(newValue));
+    toast.success(newValue ? "🔔 Sound notifications enabled" : "🔕 Sound notifications disabled");
+  };
+
   const urgentComplaints = complaints.filter(c => c.severity === 'urgent' && c.status !== 'resolved' && c.status !== 'closed');
 
   return (
@@ -179,14 +212,28 @@ const AdminDashboard = () => {
             <h1 className="text-2xl font-bold">Brototype Resolve Admin</h1>
             <p className="text-sm text-muted-foreground">Welcome, {profile?.full_name}</p>
           </div>
-          <Button 
-            variant="outline" 
-            onClick={handleLogout}
-            className="border-2"
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={toggleSound}
+              className="border-2"
+              title={soundEnabled ? "Disable sound notifications" : "Enable sound notifications"}
+            >
+              {soundEnabled ? (
+                <Volume2 className="h-4 w-4" />
+              ) : (
+                <VolumeX className="h-4 w-4" />
+              )}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleLogout}
+              className="border-2"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
       </header>
 
