@@ -10,6 +10,7 @@ import { z } from "zod";
 import { Loader2, Upload, X, FileText, Image as ImageIcon } from "lucide-react";
 import { formatFileSize } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
+import AIWritingAssistant from "./AIWritingAssistant";
 
 const complaintSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters").max(200, "Title too long"),
@@ -270,6 +271,12 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
           Supported formats: JPG, PNG, WEBP, PDF
         </p>
       </div>
+
+      <AIWritingAssistant
+        onImprove={setDescription}
+        onSuggestTitle={setTitle}
+        currentDescription={description}
+      />
 
       <Button type="submit" disabled={loading} className="w-full font-semibold">
         {loading ? (
