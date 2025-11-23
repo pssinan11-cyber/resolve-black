@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, AlertTriangle, Volume2, VolumeX } from "lucide-react";
+import { LogOut, AlertTriangle, Volume2, VolumeX, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import AdminComplaintCard from "./AdminComplaintCard";
 import AdminAnalyticsEnhanced from "./AdminAnalyticsEnhanced";
@@ -213,6 +213,14 @@ const AdminDashboard = () => {
             <p className="text-sm text-muted-foreground">Welcome, {profile?.full_name}</p>
           </div>
           <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => window.location.href = '/admin/settings'}
+              className="border-2"
+            >
+              <Settings2 className="h-4 w-4 mr-2" />
+              Settings
+            </Button>
             <Button 
               variant="outline" 
               onClick={toggleSound}
