@@ -24,7 +24,7 @@ const DEFAULT_TEST_USERS: TestUser[] = [
 ];
 
 interface CreationResult {
-  created?: Array<{ email: string; userId: string; role: string; success: boolean }>;
+  created?: Array<{ email: string; userId: string; role: string; success: boolean; action?: string }>;
   errors?: Array<{ email: string; error: string }>;
   summary?: { total: number; successful: number; failed: number };
 }
@@ -150,7 +150,7 @@ export const BatchCreateUsers = () => {
               <div>
                 <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-600" />
-                  Successfully Created
+                  Successfully Processed
                 </h4>
                 <div className="space-y-1 text-xs">
                   {result.created.map((user) => (
@@ -158,6 +158,11 @@ export const BatchCreateUsers = () => {
                       <span>✓</span>
                       <span>{user.email}</span>
                       <span className="text-xs bg-muted px-2 py-0.5 rounded">{user.role}</span>
+                      {user.action && (
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                          {user.action}
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
