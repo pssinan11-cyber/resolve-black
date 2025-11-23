@@ -33,7 +33,40 @@ const ComplaintDetails = ({ complaint, onBack }: ComplaintDetailsProps) => {
   useEffect(() => {
     fetchComments();
     checkRating();
-  }, []);
+    
+    // Subscribe to realtime updates for comments
+    const channel = supabase
+      .channel(`student-complaint-comments-${complaint.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'comments',
+          filter: `complaint_id=eq.${complaint.id}`
+        },
+        (payload) => {
+          console.log('Student realtime comment event:', payload);
+          
+          // Show notification for admin replies
+          if (payload.eventType === 'INSERT' && payload.new && payload.new.is_admin_reply) {
+            toast.info("💬 Admin replied to your complaint", { duration: 3000 });
+          }
+          
+          fetchComments();
+        }
+      )
+      .subscribe((status) => {
+        console.log('Student comments subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Student realtime comments connected');
+        }
+      });
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [complaint.id]);
 
   const fetchComments = async () => {
     const { data } = await supabase
