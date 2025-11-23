@@ -61,13 +61,26 @@ const AdminComplaintDetails = ({ complaint, onBack, onUpdate }: AdminComplaintDe
   }, [complaint.id]);
 
   const fetchComments = async () => {
-    const { data } = await supabase
-      .from("comments")
-      .select("*, profiles(full_name)")
-      .eq("complaint_id", complaint.id)
-      .order("created_at", { ascending: true });
+    try {
+      console.log('Admin fetching comments for complaint:', complaint.id);
+      
+      const { data, error } = await supabase
+        .from("comments")
+        .select("*, profiles(full_name)")
+        .eq("complaint_id", complaint.id)
+        .order("created_at", { ascending: true });
 
-    setComments(data || []);
+      if (error) {
+        console.error('Error fetching comments:', error);
+        toast.error('Failed to load comments');
+        return;
+      }
+
+      console.log('Admin fetched comments:', data);
+      setComments(data || []);
+    } catch (error) {
+      console.error('Exception fetching comments:', error);
+    }
   };
 
   const handleSendComment = async () => {
