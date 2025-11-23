@@ -90,7 +90,7 @@ const StudentAuth = () => {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
+            emailRedirectTo: `${window.location.origin}/verify-email`,
             data: {
               full_name: fullName,
             },

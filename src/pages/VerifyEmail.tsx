@@ -42,9 +42,11 @@ const VerifyEmail = () => {
 
     // Listen for auth state changes (e.g., when email is verified)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user?.email_confirmed_at) {
-        toast.success("Email verified successfully!");
-        navigate("/dashboard");
+      if (session?.user?.email_confirmed_at) {
+        toast.success("Email verified! Logging you in...");
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 1000);
       }
     });
 
