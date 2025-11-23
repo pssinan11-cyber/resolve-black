@@ -23,8 +23,8 @@ serve(async (req: Request) => {
 
     switch (action) {
       case "improve":
-        systemPrompt = "You are a helpful assistant that improves complaint descriptions. Make them clear, professional, and detailed while maintaining the original intent. Keep it concise but comprehensive.";
-        userPrompt = `Improve this complaint description:\n\n${text}`;
+        systemPrompt = "You are a text improvement assistant. Your job is to ONLY return the improved version of the text. Do not include any explanations, introductions, or reasoning. Just return the improved text directly, nothing else.";
+        userPrompt = `Improve this complaint description to be clear, professional, and detailed while maintaining the original intent:\n\n${text}`;
         break;
       
       case "suggest_title":
