@@ -33,6 +33,7 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [recordedAudio, setRecordedAudio] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string>("");
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("en");
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -40,6 +41,23 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
   const animationFrameRef = useRef<number>();
   const analyserRef = useRef<AnalyserNode | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+
+  const languages = [
+    { code: "en", name: "English" },
+    { code: "es", name: "Spanish" },
+    { code: "fr", name: "French" },
+    { code: "de", name: "German" },
+    { code: "it", name: "Italian" },
+    { code: "pt", name: "Portuguese" },
+    { code: "nl", name: "Dutch" },
+    { code: "pl", name: "Polish" },
+    { code: "ru", name: "Russian" },
+    { code: "ar", name: "Arabic" },
+    { code: "zh", name: "Chinese" },
+    { code: "ja", name: "Japanese" },
+    { code: "hi", name: "Hindi" },
+    { code: "ko", name: "Korean" },
+  ];
 
   const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -216,9 +234,12 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
 
       const base64Audio = (reader.result as string).split(',')[1];
 
-      // Call speech-to-text function
+      // Call speech-to-text function with language
       const { data, error } = await supabase.functions.invoke('speech-to-text', {
-        body: { audio: base64Audio }
+        body: { 
+          audio: base64Audio,
+          language: selectedLanguage 
+        }
       });
 
       if (error) throw error;
@@ -345,36 +366,55 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
       <Card className="border-2 bg-muted/30">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <div>
+            <div className="flex-1">
               <h3 className="font-semibold text-lg">Voice Complaint</h3>
               <p className="text-sm text-muted-foreground">Record your complaint using voice</p>
             </div>
-            {!recordedAudio && (
-              <Button
-                type="button"
-                variant={isRecording ? "destructive" : "default"}
-                onClick={isRecording ? stopRecording : startRecording}
-                disabled={isTranscribing}
-                className="font-semibold"
-              >
-                {isTranscribing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Transcribing...
-                  </>
-                ) : isRecording ? (
-                  <>
-                    <Square className="h-4 w-4 mr-2" />
-                    Stop Recording
-                  </>
-                ) : (
-                  <>
-                    <Mic className="h-4 w-4 mr-2" />
-                    Start Recording
-                  </>
-                )}
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {!recordedAudio && !isRecording && (
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="language" className="text-sm whitespace-nowrap">Language:</Label>
+                  <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                    <SelectTrigger className="w-[140px] border-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {languages.map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          {lang.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {!recordedAudio && (
+                <Button
+                  type="button"
+                  variant={isRecording ? "destructive" : "default"}
+                  onClick={isRecording ? stopRecording : startRecording}
+                  disabled={isTranscribing}
+                  className="font-semibold"
+                >
+                  {isTranscribing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Transcribing...
+                    </>
+                  ) : isRecording ? (
+                    <>
+                      <Square className="h-4 w-4 mr-2" />
+                      Stop Recording
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="h-4 w-4 mr-2" />
+                      Start Recording
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
           
           {isRecording && (
