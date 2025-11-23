@@ -103,10 +103,16 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
     
     if (!canvasCtx) return;
 
+    // Set canvas size to match display size
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
 
     const draw = () => {
+      if (!isRecording) return;
       animationFrameRef.current = requestAnimationFrame(draw);
 
       analyser.getByteTimeDomainData(dataArray);
@@ -426,9 +432,7 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
               <div className="relative">
                 <canvas
                   ref={canvasRef}
-                  width={600}
-                  height={100}
-                  className="w-full rounded-lg border-2 bg-muted"
+                  className="w-full h-24 rounded-lg border-2 bg-muted"
                 />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="text-xs text-muted-foreground/50 font-mono">WAVEFORM</div>
