@@ -32,23 +32,28 @@ const AdminComplaintDetails = ({ complaint, onBack, onUpdate }: AdminComplaintDe
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
           schema: 'public',
           table: 'comments',
           filter: `complaint_id=eq.${complaint.id}`
         },
         (payload) => {
-          const newComment = payload.new;
+          console.log('Admin realtime comment event:', payload);
           
           // Show notification for student comments
-          if (!newComment.is_admin_reply) {
+          if (payload.eventType === 'INSERT' && payload.new && !payload.new.is_admin_reply) {
             toast.info("💬 Student added a new comment", { duration: 3000 });
           }
           
           fetchComments();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Admin comments subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Admin realtime comments connected');
+        }
+      });
     
     return () => {
       supabase.removeChannel(channel);
