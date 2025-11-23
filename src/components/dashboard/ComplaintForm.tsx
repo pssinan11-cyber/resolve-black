@@ -31,8 +31,11 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
   const [fileError, setFileError] = useState<string>("");
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [recordedAudio, setRecordedAudio] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string>("");
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -84,8 +87,11 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
 
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        await transcribeAudio(audioBlob);
+        const url = URL.createObjectURL(audioBlob);
+        setRecordedAudio(audioBlob);
+        setAudioUrl(url);
         stream.getTracks().forEach(track => track.stop());
+        toast.success("Recording complete! Preview your audio below.");
       };
 
       mediaRecorder.start();
@@ -101,6 +107,22 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+    }
+  };
+
+  const discardRecording = () => {
+    if (audioUrl) {
+      URL.revokeObjectURL(audioUrl);
+    }
+    setRecordedAudio(null);
+    setAudioUrl("");
+    audioChunksRef.current = [];
+  };
+
+  const handleTranscribe = async () => {
+    if (recordedAudio) {
+      await transcribeAudio(recordedAudio);
+      discardRecording();
     }
   };
 
@@ -250,36 +272,80 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
               <h3 className="font-semibold text-lg">Voice Complaint</h3>
               <p className="text-sm text-muted-foreground">Record your complaint using voice</p>
             </div>
-            <Button
-              type="button"
-              variant={isRecording ? "destructive" : "default"}
-              onClick={isRecording ? stopRecording : startRecording}
-              disabled={isTranscribing}
-              className="font-semibold"
-            >
-              {isTranscribing ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Transcribing...
-                </>
-              ) : isRecording ? (
-                <>
-                  <Square className="h-4 w-4 mr-2" />
-                  Stop Recording
-                </>
-              ) : (
-                <>
-                  <Mic className="h-4 w-4 mr-2" />
-                  Start Recording
-                </>
-              )}
-            </Button>
+            {!recordedAudio && (
+              <Button
+                type="button"
+                variant={isRecording ? "destructive" : "default"}
+                onClick={isRecording ? stopRecording : startRecording}
+                disabled={isTranscribing}
+                className="font-semibold"
+              >
+                {isTranscribing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Transcribing...
+                  </>
+                ) : isRecording ? (
+                  <>
+                    <Square className="h-4 w-4 mr-2" />
+                    Stop Recording
+                  </>
+                ) : (
+                  <>
+                    <Mic className="h-4 w-4 mr-2" />
+                    Start Recording
+                  </>
+                )}
+              </Button>
+            )}
           </div>
           
           {isRecording && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
               Recording in progress... Click "Stop Recording" when done
+            </div>
+          )}
+
+          {recordedAudio && audioUrl && (
+            <div className="space-y-4 mt-4 animate-in fade-in-0 slide-in-from-top-2 duration-500">
+              <div className="p-4 bg-background rounded-lg border-2">
+                <p className="text-sm font-medium mb-3">Preview Recording</p>
+                <audio
+                  ref={audioRef}
+                  src={audioUrl}
+                  controls
+                  className="w-full"
+                />
+              </div>
+              
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="default"
+                  onClick={handleTranscribe}
+                  disabled={isTranscribing}
+                  className="flex-1 font-semibold"
+                >
+                  {isTranscribing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Transcribing...
+                    </>
+                  ) : (
+                    "Transcribe to Text"
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={discardRecording}
+                  disabled={isTranscribing}
+                  className="font-semibold border-2"
+                >
+                  Re-record
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
