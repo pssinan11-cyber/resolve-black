@@ -16,13 +16,45 @@ const StudentDashboard = () => {
   useEffect(() => {
     fetchData();
     
-    // Subscribe to realtime updates
-    const channel = supabase
-      .channel('complaints-changes')
+    // Subscribe to realtime updates for complaints
+    const complaintsChannel = supabase
+      .channel('student-complaints-changes')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'complaints'
+        },
+        async (payload) => {
+          const updatedComplaint = payload.new;
+          const oldComplaint = payload.old;
+          
+          // Only notify if this is the user's complaint
+          const { data: { user } } = await supabase.auth.getUser();
+          if (updatedComplaint.student_id !== user?.id) return;
+          
+          // Show notification for status changes
+          if (updatedComplaint.status !== oldComplaint.status) {
+            const statusLabels = {
+              pending: 'Pending',
+              in_progress: 'In Progress',
+              resolved: 'Resolved',
+              closed: 'Closed'
+            };
+            toast.success(
+              `Complaint "${updatedComplaint.title}" status changed to ${statusLabels[updatedComplaint.status]}`,
+              { duration: 5000 }
+            );
+          }
+          
+          fetchData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
           schema: 'public',
           table: 'complaints'
         },
@@ -32,8 +64,41 @@ const StudentDashboard = () => {
       )
       .subscribe();
 
+    // Subscribe to realtime updates for comments
+    const commentsChannel = supabase
+      .channel('student-comments-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'comments'
+        },
+        async (payload) => {
+          const newComment = payload.new;
+          
+          // Check if this comment is on one of the user's complaints
+          const { data: { user } } = await supabase.auth.getUser();
+          const { data: complaint } = await supabase
+            .from('complaints')
+            .select('title, student_id')
+            .eq('id', newComment.complaint_id)
+            .single();
+          
+          if (complaint && complaint.student_id === user?.id && newComment.is_admin_reply) {
+            toast.info(
+              `New admin reply on: "${complaint.title}"`,
+              { duration: 5000 }
+            );
+            fetchData();
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(complaintsChannel);
+      supabase.removeChannel(commentsChannel);
     };
   }, []);
 

@@ -17,24 +17,99 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchData();
     
-    // Subscribe to realtime updates
-    const channel = supabase
+    // Subscribe to realtime updates for complaints
+    const complaintsChannel = supabase
       .channel('admin-complaints-changes')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'complaints'
         },
-        () => {
+        async (payload) => {
+          const newComplaint = payload.new;
+          
+          // Fetch student name for the notification
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', newComplaint.student_id)
+            .single();
+          
+          const severityEmoji = {
+            urgent: '🚨',
+            high: '⚠️',
+            medium: '📋',
+            low: 'ℹ️'
+          };
+          
+          toast.info(
+            `${severityEmoji[newComplaint.severity]} New ${newComplaint.severity} complaint from ${profile?.full_name || 'Student'}`,
+            { duration: 5000 }
+          );
+          
+          fetchData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'complaints'
+        },
+        (payload) => {
+          const updatedComplaint = payload.new;
+          const oldComplaint = payload.old;
+          
+          // Show notification for severity escalation
+          if (updatedComplaint.severity === 'urgent' && oldComplaint.severity !== 'urgent') {
+            toast.warning(
+              `🚨 Complaint escalated to URGENT: "${updatedComplaint.title}"`,
+              { duration: 5000 }
+            );
+          }
+          
           fetchData();
         }
       )
       .subscribe();
 
+    // Subscribe to realtime updates for comments
+    const commentsChannel = supabase
+      .channel('admin-comments-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'comments'
+        },
+        async (payload) => {
+          const newComment = payload.new;
+          
+          // Only notify about student comments (not admin replies)
+          if (!newComment.is_admin_reply) {
+            const { data: complaint } = await supabase
+              .from('complaints')
+              .select('title')
+              .eq('id', newComment.complaint_id)
+              .single();
+            
+            toast.info(
+              `💬 New student comment on: "${complaint?.title || 'a complaint'}"`,
+              { duration: 5000 }
+            );
+            fetchData();
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(complaintsChannel);
+      supabase.removeChannel(commentsChannel);
     };
   }, []);
 
