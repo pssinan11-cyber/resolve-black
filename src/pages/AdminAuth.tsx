@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Shield, Eye, EyeOff } from "lucide-react";
 import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
+import { useWelcomeSound } from "@/hooks/useWelcomeSound";
+import confetti from "canvas-confetti";
 
 const authSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -22,6 +24,7 @@ const AdminAuth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const navigate = useNavigate();
+  const { playWelcomeSound } = useWelcomeSound();
 
   useEffect(() => {
     const checkUser = async () => {
@@ -60,7 +63,21 @@ const AdminAuth = () => {
           toast.error(error.message);
         }
       } else {
-        toast.success("Admin access granted");
+        // Play welcome sound
+        playWelcomeSound();
+        
+        // Show monochrome confetti
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.6 },
+          colors: ['#000000', '#ffffff', '#666666'],
+          disableForReducedMotion: true
+        });
+        
+        toast.success("Admin access granted", {
+          description: "Welcome back, Administrator"
+        });
       }
     } catch (error) {
       if (error instanceof z.ZodError) {

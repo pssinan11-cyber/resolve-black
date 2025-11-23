@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Eye, EyeOff } from "lucide-react";
 import { ForgotPasswordDialog } from "@/components/auth/ForgotPasswordDialog";
+import { useWelcomeSound } from "@/hooks/useWelcomeSound";
+import confetti from "canvas-confetti";
 
 const authSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -25,6 +27,7 @@ const StudentAuth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const navigate = useNavigate();
+  const { playWelcomeSound } = useWelcomeSound();
 
   const getPasswordStrength = (pwd: string): { strength: 'weak' | 'medium' | 'strong'; score: number } => {
     let score = 0;
@@ -83,7 +86,21 @@ const StudentAuth = () => {
             toast.error(error.message);
           }
         } else {
-          toast.success("Welcome back!");
+          // Play welcome sound
+          playWelcomeSound();
+          
+          // Show monochrome confetti
+          confetti({
+            particleCount: 50,
+            spread: 60,
+            origin: { y: 0.6 },
+            colors: ['#000000', '#ffffff', '#666666'],
+            disableForReducedMotion: true
+          });
+          
+          toast.success("Welcome back!", {
+            description: "Logging you in..."
+          });
         }
       } else {
         const { data, error } = await supabase.auth.signUp({
