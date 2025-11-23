@@ -83,9 +83,11 @@ serve(async (req) => {
 
     for (const userData of users) {
       try {
-        console.log(`Creating user: ${userData.email}`);
+        console.log(`Processing user: ${userData.email}`);
+        let userId: string | null = null;
+        let isNewUser = false;
 
-        // Create auth user with auto-confirm
+        // Try to create auth user, or get existing user
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email: userData.email,
           password: userData.password,
@@ -96,56 +98,101 @@ serve(async (req) => {
         });
 
         if (authError) {
-          console.error(`Error creating auth user ${userData.email}:`, authError);
-          errors.push({ email: userData.email, error: authError.message });
-          continue;
+          // Check if user already exists
+          if (authError.message.includes('already been registered')) {
+            console.log(`User ${userData.email} already exists, fetching user ID...`);
+            
+            // Get existing user by email
+            const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+            
+            if (listError) {
+              console.error(`Error fetching users:`, listError);
+              errors.push({ email: userData.email, error: `Cannot fetch existing user: ${listError.message}` });
+              continue;
+            }
+
+            const existingUser = existingUsers?.users.find(u => u.email === userData.email);
+            if (!existingUser) {
+              console.error(`User ${userData.email} should exist but not found`);
+              errors.push({ email: userData.email, error: 'User exists but cannot be found' });
+              continue;
+            }
+
+            userId = existingUser.id;
+            console.log(`Found existing user: ${userId}`);
+          } else {
+            console.error(`Error creating auth user ${userData.email}:`, authError);
+            errors.push({ email: userData.email, error: authError.message });
+            continue;
+          }
+        } else {
+          if (!authData.user) {
+            console.error(`No user returned for ${userData.email}`);
+            errors.push({ email: userData.email, error: 'No user returned from auth' });
+            continue;
+          }
+          userId = authData.user.id;
+          isNewUser = true;
+          console.log(`Auth user created: ${userId}`);
         }
 
-        if (!authData.user) {
-          console.error(`No user returned for ${userData.email}`);
-          errors.push({ email: userData.email, error: 'No user returned from auth' });
-          continue;
-        }
-
-        console.log(`Auth user created: ${authData.user.id}`);
-
-        // Create profile
-        const { error: profileError } = await supabaseAdmin
+        // Ensure profile exists
+        const { data: existingProfile } = await supabaseAdmin
           .from('profiles')
-          .insert({
-            id: authData.user.id,
-            full_name: userData.fullName
-          });
+          .select('id')
+          .eq('id', userId)
+          .single();
 
-        if (profileError) {
-          console.error(`Error creating profile for ${userData.email}:`, profileError);
-          errors.push({ email: userData.email, error: `Profile error: ${profileError.message}` });
-          continue;
+        if (!existingProfile) {
+          const { error: profileError } = await supabaseAdmin
+            .from('profiles')
+            .insert({
+              id: userId,
+              full_name: userData.fullName
+            });
+
+          if (profileError) {
+            console.error(`Error creating profile for ${userData.email}:`, profileError);
+            errors.push({ email: userData.email, error: `Profile error: ${profileError.message}` });
+            continue;
+          }
+          console.log(`Profile created for ${userData.email}`);
+        } else {
+          console.log(`Profile already exists for ${userData.email}`);
         }
 
-        console.log(`Profile created for ${userData.email}`);
-
-        // Assign role
-        const { error: roleError } = await supabaseAdmin
+        // Ensure role exists
+        const { data: existingRole } = await supabaseAdmin
           .from('user_roles')
-          .insert({
-            user_id: authData.user.id,
-            role: userData.role
-          });
+          .select('id')
+          .eq('user_id', userId)
+          .eq('role', userData.role)
+          .single();
 
-        if (roleError) {
-          console.error(`Error assigning role for ${userData.email}:`, roleError);
-          errors.push({ email: userData.email, error: `Role error: ${roleError.message}` });
-          continue;
+        if (!existingRole) {
+          const { error: roleError } = await supabaseAdmin
+            .from('user_roles')
+            .insert({
+              user_id: userId,
+              role: userData.role
+            });
+
+          if (roleError) {
+            console.error(`Error assigning role for ${userData.email}:`, roleError);
+            errors.push({ email: userData.email, error: `Role error: ${roleError.message}` });
+            continue;
+          }
+          console.log(`Role ${userData.role} assigned to ${userData.email}`);
+        } else {
+          console.log(`Role already exists for ${userData.email}`);
         }
-
-        console.log(`Role ${userData.role} assigned to ${userData.email}`);
 
         results.push({
           email: userData.email,
-          userId: authData.user.id,
+          userId: userId,
           role: userData.role,
-          success: true
+          success: true,
+          action: isNewUser ? 'created' : 'updated'
         });
 
       } catch (error) {
