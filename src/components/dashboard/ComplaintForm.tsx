@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Loader2, Upload, X, FileText, Image as ImageIcon, Mic, Square } from "lucide-react";
+import { Loader2, Upload, X, FileText, Image as ImageIcon } from "lucide-react";
 import { formatFileSize } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import AIWritingAssistant from "./AIWritingAssistant";
@@ -28,33 +28,8 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
   const [severity, setSeverity] = useState<string>("medium");
   const [loading, setLoading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [fileError, setFileError] = useState<string>("");
-  const [isRecording, setIsRecording] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("en");
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationFrameRef = useRef<number>();
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
 
-  const languages = [
-    { code: "en", name: "English" },
-    { code: "es", name: "Spanish" },
-    { code: "fr", name: "French" },
-    { code: "de", name: "German" },
-    { code: "it", name: "Italian" },
-    { code: "pt", name: "Portuguese" },
-    { code: "nl", name: "Dutch" },
-    { code: "pl", name: "Polish" },
-    { code: "ru", name: "Russian" },
-    { code: "ar", name: "Arabic" },
-    { code: "zh", name: "Chinese" },
-    { code: "ja", name: "Japanese" },
-    { code: "hi", name: "Hindi" },
-    { code: "ko", name: "Korean" },
-  ];
+  const [fileError, setFileError] = useState<string>("");
 
   const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -89,170 +64,6 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
   const removeFile = (index: number) => {
     setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
     setFileError("");
-  };
-
-  const drawWaveform = () => {
-    if (!canvasRef.current || !analyserRef.current) return;
-
-    const canvas = canvasRef.current;
-    const canvasCtx = canvas.getContext('2d');
-    const analyser = analyserRef.current;
-    
-    if (!canvasCtx) return;
-
-    // Set canvas size to match display size
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = rect.height;
-
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-
-    const draw = () => {
-      if (!isRecording) return;
-      animationFrameRef.current = requestAnimationFrame(draw);
-
-      analyser.getByteTimeDomainData(dataArray);
-
-      canvasCtx.fillStyle = 'hsl(var(--muted))';
-      canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
-
-      canvasCtx.lineWidth = 2;
-      canvasCtx.strokeStyle = 'hsl(var(--foreground))';
-      canvasCtx.beginPath();
-
-      const sliceWidth = (canvas.width * 1.0) / bufferLength;
-      let x = 0;
-
-      for (let i = 0; i < bufferLength; i++) {
-        const v = dataArray[i] / 128.0;
-        const y = (v * canvas.height) / 2;
-
-        if (i === 0) {
-          canvasCtx.moveTo(x, y);
-        } else {
-          canvasCtx.lineTo(x, y);
-        }
-
-        x += sliceWidth;
-      }
-
-      canvasCtx.lineTo(canvas.width, canvas.height / 2);
-      canvasCtx.stroke();
-    };
-
-    draw();
-  };
-
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-
-      // Set up Web Audio API for waveform visualization
-      const audioContext = new AudioContext();
-      audioContextRef.current = audioContext;
-      const source = audioContext.createMediaStreamSource(stream);
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 2048;
-      source.connect(analyser);
-      analyserRef.current = analyser;
-
-      // Start waveform visualization
-      drawWaveform();
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        stream.getTracks().forEach(track => track.stop());
-        
-        // Stop waveform visualization
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-        }
-        if (audioContextRef.current) {
-          audioContextRef.current.close();
-        }
-        
-        // Auto-transcribe immediately after recording stops
-        toast.success("Recording complete! Transcribing...");
-        await transcribeAudio(audioBlob);
-        
-        // Clean up
-        audioChunksRef.current = [];
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-      toast.success("Recording started. Speak your complaint...");
-    } catch (error) {
-      console.error("Error starting recording:", error);
-      toast.error("Failed to access microphone");
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      
-      // Clean up animation
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    }
-  };
-
-  const transcribeAudio = async (audioBlob: Blob) => {
-    setIsTranscribing(true);
-    try {
-      // Convert audio blob to base64
-      const reader = new FileReader();
-      reader.readAsDataURL(audioBlob);
-      
-      await new Promise((resolve) => {
-        reader.onloadend = resolve;
-      });
-
-      const base64Audio = (reader.result as string).split(',')[1];
-
-      // Call speech-to-text function with language
-      const { data, error } = await supabase.functions.invoke('speech-to-text', {
-        body: { 
-          audio: base64Audio,
-          language: selectedLanguage 
-        }
-      });
-
-      if (error) throw error;
-
-      if (data?.text) {
-        // Auto-generate title from first sentence or first 50 chars
-        const firstSentence = data.text.split(/[.!?]/)[0].trim();
-        const autoTitle = firstSentence.length > 50 
-          ? firstSentence.substring(0, 50) + "..." 
-          : firstSentence;
-        
-        if (!title) {
-          setTitle(autoTitle);
-        }
-        
-        setDescription(data.text);
-        toast.success("Voice transcribed successfully!");
-      }
-    } catch (error: any) {
-      console.error("Transcription error:", error);
-      toast.error(error.message || "Failed to transcribe audio. Please ensure OPENAI_API_KEY is configured.");
-    } finally {
-      setIsTranscribing(false);
-    }
   };
 
   const uploadFiles = async (complaintId: string, userId: string) => {
@@ -364,66 +175,7 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
       </div>
 
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="description">Description</Label>
-          <div className="flex items-center gap-2">
-            {!isRecording && (
-              <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                <SelectTrigger className="w-[120px] h-8 text-xs border-2">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {languages.map((lang) => (
-                    <SelectItem key={lang.code} value={lang.code}>
-                      {lang.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-            <Button
-              type="button"
-              size="sm"
-              variant={isRecording ? "destructive" : "outline"}
-              onClick={isRecording ? stopRecording : startRecording}
-              disabled={isTranscribing}
-              className="h-8"
-            >
-              {isTranscribing ? (
-                <>
-                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                  <span className="text-xs">Transcribing...</span>
-                </>
-              ) : isRecording ? (
-                <>
-                  <Square className="h-3 w-3 mr-1" />
-                  <span className="text-xs">Stop</span>
-                </>
-              ) : (
-                <>
-                  <Mic className="h-3 w-3 mr-1" />
-                  <span className="text-xs">Add Voice</span>
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-        
-        {isRecording && (
-          <div className="space-y-2 animate-in fade-in-0 slide-in-from-top-2 duration-300">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground p-2 bg-muted/50 rounded">
-              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-              Recording... Click "Stop" when done
-            </div>
-            <div className="relative">
-              <canvas
-                ref={canvasRef}
-                className="w-full h-16 rounded border-2 bg-muted"
-              />
-            </div>
-          </div>
-        )}
-        
+        <Label htmlFor="description">Description</Label>
         <Textarea
           id="description"
           placeholder="Provide detailed information about your complaint..."
