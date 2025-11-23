@@ -9,6 +9,8 @@ import { Mail, RefreshCw } from "lucide-react";
 const VerifyEmail = () => {
   const [email, setEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [timeRemaining, setTimeRemaining] = useState<string>("");
+  const [expiryTime, setExpiryTime] = useState<Date | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -27,6 +29,13 @@ const VerifyEmail = () => {
       }
 
       setEmail(user.email || null);
+      
+      // Set expiry time to 24 hours from user creation
+      if (user.created_at) {
+        const createdAt = new Date(user.created_at);
+        const expiry = new Date(createdAt.getTime() + 24 * 60 * 60 * 1000);
+        setExpiryTime(expiry);
+      }
     };
 
     checkUser();
@@ -41,6 +50,32 @@ const VerifyEmail = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (!expiryTime) return;
+
+    const updateTimer = () => {
+      const now = new Date();
+      const diff = expiryTime.getTime() - now.getTime();
+
+      if (diff <= 0) {
+        setTimeRemaining("Expired");
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setTimeRemaining(`${hours}h ${minutes}m ${seconds}s`);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, [expiryTime]);
 
   const handleResendEmail = async () => {
     if (!email) return;
@@ -88,9 +123,16 @@ const VerifyEmail = () => {
             <p>
               Please check your inbox and click the verification link to activate your account.
             </p>
-            <p>
-              The link will expire in 24 hours.
-            </p>
+            {timeRemaining && (
+              <div className="pt-2">
+                <p className="text-xs text-muted-foreground">Link expires in:</p>
+                <p className={`text-lg font-mono font-semibold ${
+                  timeRemaining === "Expired" ? "text-destructive" : "text-foreground"
+                }`}>
+                  {timeRemaining}
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
