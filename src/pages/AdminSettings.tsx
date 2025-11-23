@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { BatchCreateUsers } from "@/components/dashboard/BatchCreateUsers";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -327,6 +328,8 @@ const AdminSettings = () => {
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-4">
+            <BatchCreateUsers />
+            
             <Card className="border-2">
               <CardHeader>
                 <CardTitle>Application Settings</CardTitle>
