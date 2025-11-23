@@ -34,31 +34,6 @@ const ComplaintDetails = ({ complaint, onBack }: ComplaintDetailsProps) => {
   useEffect(() => {
     fetchComments();
     checkRating();
-    
-    // Trigger confetti on mount if complaint is resolved
-    if (complaint.status === 'resolved' || complaint.status === 'closed') {
-      setTimeout(() => {
-        const count = 100;
-        const defaults = {
-          origin: { y: 0.6 },
-          colors: ['#000000', '#FFFFFF', '#666666'],
-          shapes: ['circle', 'square'],
-          scalar: 1,
-        };
-
-        function fire(particleRatio: number, opts: any) {
-          confetti({
-            ...defaults,
-            ...opts,
-            particleCount: Math.floor(count * particleRatio),
-          });
-        }
-
-        fire(0.25, { spread: 26, startVelocity: 55 });
-        fire(0.2, { spread: 60 });
-        fire(0.35, { spread: 100, decay: 0.91 });
-      }, 300);
-    }
   }, []);
 
   const fetchComments = async () => {

@@ -25,7 +25,35 @@ const AdminComplaintDetails = ({ complaint, onBack, onUpdate }: AdminComplaintDe
 
   useEffect(() => {
     fetchComments();
-  }, []);
+    
+    // Subscribe to realtime updates for comments
+    const channel = supabase
+      .channel(`admin-complaint-comments-${complaint.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'comments',
+          filter: `complaint_id=eq.${complaint.id}`
+        },
+        (payload) => {
+          const newComment = payload.new;
+          
+          // Show notification for student comments
+          if (!newComment.is_admin_reply) {
+            toast.info("💬 Student added a new comment", { duration: 3000 });
+          }
+          
+          fetchComments();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [complaint.id]);
 
   const fetchComments = async () => {
     const { data } = await supabase
