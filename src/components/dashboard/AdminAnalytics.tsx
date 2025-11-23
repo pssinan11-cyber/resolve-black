@@ -8,13 +8,13 @@ interface AdminAnalyticsProps {
 const AdminAnalytics = ({ complaints }: AdminAnalyticsProps) => {
   const totalComplaints = complaints.length;
   const resolvedComplaints = complaints.filter(
-    (c) => c.status === "resolved" || c.status === "closed"
+    (c) => c.status === "resolved"
   ).length;
   const pendingComplaints = complaints.filter((c) => c.status === "pending").length;
   const inProgressComplaints = complaints.filter((c) => c.status === "in_progress").length;
 
   const resolvedWithTime = complaints.filter(
-    (c) => (c.status === "resolved" || c.status === "closed") && c.resolved_at
+    (c) => c.status === "resolved" && c.resolved_at
   );
 
   const avgResolutionTime =

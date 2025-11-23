@@ -22,13 +22,13 @@ const AdminComplaintCard = ({ complaint, onUpdate }: AdminComplaintCardProps) =>
 
   const handleStatusChange = async (newStatus: string) => {
     setUpdating(true);
-    if (newStatus === "resolved" || newStatus === "closed") {
+    if (newStatus === "resolved") {
       setIsResolving(true);
     }
     
     try {
       const updates: any = { status: newStatus };
-      if (newStatus === "resolved" || newStatus === "closed") {
+      if (newStatus === "resolved") {
         updates.resolved_at = new Date().toISOString();
       }
 
