@@ -41,8 +41,7 @@ const StudentDashboard = () => {
             const statusLabels = {
               pending: 'Pending',
               in_progress: 'In Progress',
-              resolved: 'Resolved',
-              closed: 'Closed'
+              resolved: 'Resolved'
             };
             toast.success(
               `Complaint "${updatedComplaint.title}" status changed to ${statusLabels[updatedComplaint.status]}`,
