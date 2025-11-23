@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import StudentDashboard from "@/components/dashboard/StudentDashboard";
 import AdminDashboard from "@/components/dashboard/AdminDashboard";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const Dashboard = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -22,6 +23,9 @@ const Dashboard = () => {
       // Check if email is verified
       const { data: { user } } = await supabase.auth.getUser();
       if (user && !user.email_confirmed_at) {
+        toast.info("Please verify your email", {
+          description: "You need to verify your email address before accessing the dashboard."
+        });
         navigate("/verify-email");
         return;
       }

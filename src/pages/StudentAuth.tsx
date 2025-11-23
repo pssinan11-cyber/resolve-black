@@ -105,11 +105,10 @@ const StudentAuth = () => {
           }
         } else {
           if (data?.user && !data.user.email_confirmed_at) {
-            toast.success("Account created! Please check your email to verify your account.");
-            // Redirect to verify email page
-            setTimeout(() => {
-              navigate("/verify-email");
-            }, 1500);
+            toast.success("Account created! Please verify your email to continue.", {
+              description: "Check your inbox for the verification link."
+            });
+            navigate("/verify-email");
           } else {
             toast.success("Account created successfully!");
           }
