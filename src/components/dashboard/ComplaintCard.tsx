@@ -15,15 +15,13 @@ interface ComplaintCardProps {
 const statusProgress: Record<string, number> = {
   pending: 25,
   in_progress: 50,
-  resolved: 75,
-  closed: 100,
+  resolved: 100,
 };
 
 const statusLabels: Record<string, string> = {
   pending: "Pending Review",
   in_progress: "In Progress",
   resolved: "Resolved",
-  closed: "Closed",
 };
 
 const ComplaintCard = ({ complaint }: ComplaintCardProps) => {
@@ -32,11 +30,11 @@ const ComplaintCard = ({ complaint }: ComplaintCardProps) => {
   const hasShownConfettiRef = useRef(false);
 
   useEffect(() => {
-    // Trigger confetti when complaint becomes resolved or closed
+    // Trigger confetti when complaint becomes resolved
     if (
       !hasShownConfettiRef.current &&
       previousStatusRef.current !== complaint.status &&
-      (complaint.status === 'resolved' || complaint.status === 'closed')
+      complaint.status === 'resolved'
     ) {
       hasShownConfettiRef.current = true;
       
@@ -83,7 +81,7 @@ const ComplaintCard = ({ complaint }: ComplaintCardProps) => {
 
   return (
     <Card className={`border-2 border-border hover:shadow-lg transition-all duration-500 ${
-      (complaint.status === 'resolved' || complaint.status === 'closed') 
+      complaint.status === 'resolved' 
         ? 'bg-muted/30 animate-fade-in' 
         : ''
     }`}>

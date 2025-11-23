@@ -19,8 +19,7 @@ interface ComplaintDetailsProps {
 const statusProgress: Record<string, number> = {
   pending: 25,
   in_progress: 50,
-  resolved: 75,
-  closed: 100,
+  resolved: 100,
 };
 
 const ComplaintDetails = ({ complaint, onBack }: ComplaintDetailsProps) => {
