@@ -5,7 +5,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Sparkles, Send, Loader2, Bot, User } from "lucide-react";
+import { Sparkles, Send, Loader2, Bot, User, Mic, MicOff } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   role: "user" | "assistant";
@@ -16,7 +17,11 @@ const AIStreamingChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat-stream`;
 
   useEffect(() => {
@@ -156,6 +161,77 @@ const AIStreamingChat = () => {
     streamChat(input.trim());
   };
 
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        await processAudio(audioBlob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      toast.info("Recording... Click again to stop");
+    } catch (error) {
+      console.error("Error accessing microphone:", error);
+      toast.error("Failed to access microphone");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const processAudio = async (audioBlob: Blob) => {
+    setIsProcessing(true);
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(audioBlob);
+      
+      reader.onloadend = async () => {
+        const base64Audio = (reader.result as string).split(',')[1];
+        
+        const { data, error } = await supabase.functions.invoke('speech-to-text', {
+          body: { audio: base64Audio }
+        });
+
+        if (error) throw error;
+
+        if (data.text) {
+          setInput(data.text);
+          toast.success("Speech recognized!");
+        }
+      };
+    } catch (error) {
+      console.error("Error processing audio:", error);
+      toast.error("Failed to process audio");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  };
+
   const quickPrompts = [
     "How do I write a good complaint?",
     "What severity should I choose?",
@@ -260,12 +336,28 @@ const AIStreamingChat = () => {
                 handleSubmit(e);
               }
             }}
-            disabled={isStreaming}
+            disabled={isStreaming || isProcessing}
             className="min-h-[60px] resize-none"
           />
           <Button
+            type="button"
+            onClick={toggleRecording}
+            disabled={isStreaming || isProcessing}
+            size="icon"
+            variant={isRecording ? "destructive" : "outline"}
+            className="h-[60px] w-[60px] flex-shrink-0"
+          >
+            {isProcessing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : isRecording ? (
+              <MicOff className="h-4 w-4" />
+            ) : (
+              <Mic className="h-4 w-4" />
+            )}
+          </Button>
+          <Button
             type="submit"
-            disabled={!input.trim() || isStreaming}
+            disabled={!input.trim() || isStreaming || isProcessing}
             size="icon"
             className="h-[60px] w-[60px] flex-shrink-0"
           >
