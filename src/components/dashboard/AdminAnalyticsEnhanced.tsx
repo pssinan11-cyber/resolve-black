@@ -21,7 +21,7 @@ const COLORS = {
 const AdminAnalyticsEnhanced = ({ complaints }: AdminAnalyticsEnhancedProps) => {
   // Calculate basic metrics
   const totalComplaints = complaints.length;
-  const resolvedComplaints = complaints.filter(c => c.status === 'resolved' || c.status === 'closed').length;
+  const resolvedComplaints = complaints.filter(c => c.status === 'resolved').length;
   const pendingComplaints = complaints.filter(c => c.status === 'pending').length;
   const inProgressComplaints = complaints.filter(c => c.status === 'in_progress').length;
 

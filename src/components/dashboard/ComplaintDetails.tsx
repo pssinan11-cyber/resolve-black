@@ -220,7 +220,7 @@ const ComplaintDetails = ({ complaint, onBack }: ComplaintDetailsProps) => {
         </CardContent>
       </Card>
 
-      {(complaint.status === "resolved" || complaint.status === "closed") && !hasRated && (
+      {(complaint.status === "resolved") && !hasRated && (
         <Card className="border-2 border-border">
           <CardHeader>
             <CardTitle>Rate Your Experience</CardTitle>

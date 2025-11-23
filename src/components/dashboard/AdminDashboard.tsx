@@ -202,7 +202,7 @@ const AdminDashboard = () => {
     toast.success(newValue ? "🔔 Sound notifications enabled" : "🔕 Sound notifications disabled");
   };
 
-  const urgentComplaints = complaints.filter(c => c.severity === 'urgent' && c.status !== 'resolved' && c.status !== 'closed');
+  const urgentComplaints = complaints.filter(c => c.severity === 'urgent' && c.status !== 'resolved');
 
   return (
     <div className="min-h-screen bg-background">

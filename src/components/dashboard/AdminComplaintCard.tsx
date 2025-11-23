@@ -167,11 +167,10 @@ const AdminComplaintCard = ({ complaint, onUpdate }: AdminComplaintCardProps) =>
               <SelectItem value="pending">Pending</SelectItem>
               <SelectItem value="in_progress">In Progress</SelectItem>
               <SelectItem value="resolved">Resolved</SelectItem>
-              <SelectItem value="closed">Closed</SelectItem>
             </SelectContent>
           </Select>
 
-          {complaint.status !== "resolved" && complaint.status !== "closed" && (
+          {complaint.status !== "resolved" && (
             <Button
               onClick={() => handleStatusChange("resolved")}
               disabled={updating}
