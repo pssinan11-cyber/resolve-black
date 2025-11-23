@@ -36,6 +36,10 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationFrameRef = useRef<number>();
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -72,12 +76,71 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
     setFileError("");
   };
 
+  const drawWaveform = () => {
+    if (!canvasRef.current || !analyserRef.current) return;
+
+    const canvas = canvasRef.current;
+    const canvasCtx = canvas.getContext('2d');
+    const analyser = analyserRef.current;
+    
+    if (!canvasCtx) return;
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    const draw = () => {
+      animationFrameRef.current = requestAnimationFrame(draw);
+
+      analyser.getByteTimeDomainData(dataArray);
+
+      canvasCtx.fillStyle = 'hsl(var(--muted))';
+      canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+      canvasCtx.lineWidth = 2;
+      canvasCtx.strokeStyle = 'hsl(var(--foreground))';
+      canvasCtx.beginPath();
+
+      const sliceWidth = (canvas.width * 1.0) / bufferLength;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = (v * canvas.height) / 2;
+
+        if (i === 0) {
+          canvasCtx.moveTo(x, y);
+        } else {
+          canvasCtx.lineTo(x, y);
+        }
+
+        x += sliceWidth;
+      }
+
+      canvasCtx.lineTo(canvas.width, canvas.height / 2);
+      canvasCtx.stroke();
+    };
+
+    draw();
+  };
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
+
+      // Set up Web Audio API for waveform visualization
+      const audioContext = new AudioContext();
+      audioContextRef.current = audioContext;
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 2048;
+      source.connect(analyser);
+      analyserRef.current = analyser;
+
+      // Start waveform visualization
+      drawWaveform();
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -91,6 +154,15 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
         setRecordedAudio(audioBlob);
         setAudioUrl(url);
         stream.getTracks().forEach(track => track.stop());
+        
+        // Stop waveform visualization
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+        if (audioContextRef.current) {
+          audioContextRef.current.close();
+        }
+        
         toast.success("Recording complete! Preview your audio below.");
       };
 
@@ -107,6 +179,11 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+      
+      // Clean up animation
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     }
   };
 
@@ -301,9 +378,22 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
           </div>
           
           {isRecording && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-              Recording in progress... Click "Stop Recording" when done
+            <div className="space-y-3 animate-in fade-in-0 slide-in-from-top-2 duration-500">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                Recording in progress... Click "Stop Recording" when done
+              </div>
+              <div className="relative">
+                <canvas
+                  ref={canvasRef}
+                  width={600}
+                  height={100}
+                  className="w-full rounded-lg border-2 bg-muted"
+                />
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="text-xs text-muted-foreground/50 font-mono">WAVEFORM</div>
+                </div>
+              </div>
             </div>
           )}
 
