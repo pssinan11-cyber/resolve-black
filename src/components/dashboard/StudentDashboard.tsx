@@ -6,6 +6,8 @@ import { LogOut, Plus } from "lucide-react";
 import { toast } from "sonner";
 import ComplaintForm from "./ComplaintForm";
 import ComplaintCard from "./ComplaintCard";
+import AIStreamingChat from "./AIStreamingChat";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const StudentDashboard = () => {
   const [showForm, setShowForm] = useState(false);
@@ -159,55 +161,68 @@ const StudentDashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl font-bold">My Complaints</h2>
-          <Button 
-            onClick={() => setShowForm(!showForm)}
-            size="lg"
-            className="font-semibold"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            New Complaint
-          </Button>
-        </div>
+        <Tabs defaultValue="complaints" className="space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="complaints">My Complaints</TabsTrigger>
+            <TabsTrigger value="ai-help">AI Assistant</TabsTrigger>
+          </TabsList>
 
-        {showForm && (
-          <Card className="mb-8 border-2 border-border">
-            <CardHeader>
-              <CardTitle>Submit a Complaint</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ComplaintForm 
-                onSuccess={() => {
-                  setShowForm(false);
-                  fetchData();
-                }} 
-              />
-            </CardContent>
-          </Card>
-        )}
-
-        {loading ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Loading complaints...</p>
-          </div>
-        ) : complaints.length === 0 ? (
-          <Card className="border-2 border-dashed border-border">
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground mb-4">No complaints yet</p>
-              <Button onClick={() => setShowForm(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Your First Complaint
+          <TabsContent value="complaints" className="space-y-8">
+            <div className="flex justify-between items-center">
+              <h2 className="text-3xl font-bold">My Complaints</h2>
+              <Button 
+                onClick={() => setShowForm(!showForm)}
+                size="lg"
+                className="font-semibold"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                New Complaint
               </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-6">
-            {complaints.map((complaint) => (
-              <ComplaintCard key={complaint.id} complaint={complaint} />
-            ))}
-          </div>
-        )}
+            </div>
+
+            {showForm && (
+              <Card className="border-2 border-border">
+                <CardHeader>
+                  <CardTitle>Submit a Complaint</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ComplaintForm 
+                    onSuccess={() => {
+                      setShowForm(false);
+                      fetchData();
+                    }} 
+                  />
+                </CardContent>
+              </Card>
+            )}
+
+            {loading ? (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">Loading complaints...</p>
+              </div>
+            ) : complaints.length === 0 ? (
+              <Card className="border-2 border-dashed border-border">
+                <CardContent className="py-12 text-center">
+                  <p className="text-muted-foreground mb-4">No complaints yet</p>
+                  <Button onClick={() => setShowForm(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Your First Complaint
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-6">
+                {complaints.map((complaint) => (
+                  <ComplaintCard key={complaint.id} complaint={complaint} />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="ai-help">
+            <AIStreamingChat />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
