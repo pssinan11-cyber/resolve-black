@@ -86,6 +86,14 @@ const StudentAuth = () => {
             toast.error(error.message);
           }
         } else {
+          // Fetch user profile to get full name
+          const { data: { user } } = await supabase.auth.getUser();
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', user?.id)
+            .single();
+
           // Play welcome sound
           playWelcomeSound();
           
@@ -98,7 +106,7 @@ const StudentAuth = () => {
             disableForReducedMotion: true
           });
           
-          toast.success("Welcome back!", {
+          toast.success(`Welcome back, ${profile?.full_name || 'Student'}!`, {
             description: "Logging you in..."
           });
         }

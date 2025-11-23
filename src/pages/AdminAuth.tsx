@@ -63,6 +63,14 @@ const AdminAuth = () => {
           toast.error(error.message);
         }
       } else {
+        // Fetch user profile to get full name
+        const { data: { user } } = await supabase.auth.getUser();
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', user?.id)
+          .single();
+
         // Play welcome sound
         playWelcomeSound();
         
@@ -75,8 +83,8 @@ const AdminAuth = () => {
           disableForReducedMotion: true
         });
         
-        toast.success("Admin access granted", {
-          description: "Welcome back, Administrator"
+        toast.success(`Welcome back, ${profile?.full_name || 'Administrator'}!`, {
+          description: "Admin access granted"
         });
       }
     } catch (error) {
