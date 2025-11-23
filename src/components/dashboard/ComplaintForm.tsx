@@ -31,12 +31,9 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
   const [fileError, setFileError] = useState<string>("");
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [recordedAudio, setRecordedAudio] = useState<Blob | null>(null);
-  const [audioUrl, setAudioUrl] = useState<string>("");
   const [selectedLanguage, setSelectedLanguage] = useState<string>("en");
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const audioRef = useRef<HTMLAudioElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number>();
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -174,9 +171,6 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
 
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        const url = URL.createObjectURL(audioBlob);
-        setRecordedAudio(audioBlob);
-        setAudioUrl(url);
         stream.getTracks().forEach(track => track.stop());
         
         // Stop waveform visualization
@@ -187,7 +181,12 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
           audioContextRef.current.close();
         }
         
-        toast.success("Recording complete! Preview your audio below.");
+        // Auto-transcribe immediately after recording stops
+        toast.success("Recording complete! Transcribing...");
+        await transcribeAudio(audioBlob);
+        
+        // Clean up
+        audioChunksRef.current = [];
       };
 
       mediaRecorder.start();
@@ -208,22 +207,6 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-    }
-  };
-
-  const discardRecording = () => {
-    if (audioUrl) {
-      URL.revokeObjectURL(audioUrl);
-    }
-    setRecordedAudio(null);
-    setAudioUrl("");
-    audioChunksRef.current = [];
-  };
-
-  const handleTranscribe = async () => {
-    if (recordedAudio) {
-      await transcribeAudio(recordedAudio);
-      discardRecording();
     }
   };
 
@@ -368,123 +351,6 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Voice Recording Card */}
-      <Card className="border-2 bg-muted/30">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg">Voice Complaint</h3>
-              <p className="text-sm text-muted-foreground">Record your complaint using voice</p>
-            </div>
-            <div className="flex items-center gap-2">
-              {!recordedAudio && !isRecording && (
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="language" className="text-sm whitespace-nowrap">Language:</Label>
-                  <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                    <SelectTrigger className="w-[140px] border-2">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {languages.map((lang) => (
-                        <SelectItem key={lang.code} value={lang.code}>
-                          {lang.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              {!recordedAudio && (
-                <Button
-                  type="button"
-                  variant={isRecording ? "destructive" : "default"}
-                  onClick={isRecording ? stopRecording : startRecording}
-                  disabled={isTranscribing}
-                  className="font-semibold"
-                >
-                  {isTranscribing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Transcribing...
-                    </>
-                  ) : isRecording ? (
-                    <>
-                      <Square className="h-4 w-4 mr-2" />
-                      Stop Recording
-                    </>
-                  ) : (
-                    <>
-                      <Mic className="h-4 w-4 mr-2" />
-                      Start Recording
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-          </div>
-          
-          {isRecording && (
-            <div className="space-y-3 animate-in fade-in-0 slide-in-from-top-2 duration-500">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                Recording in progress... Click "Stop Recording" when done
-              </div>
-              <div className="relative">
-                <canvas
-                  ref={canvasRef}
-                  className="w-full h-24 rounded-lg border-2 bg-muted"
-                />
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="text-xs text-muted-foreground/50 font-mono">WAVEFORM</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {recordedAudio && audioUrl && (
-            <div className="space-y-4 mt-4 animate-in fade-in-0 slide-in-from-top-2 duration-500">
-              <div className="p-4 bg-background rounded-lg border-2">
-                <p className="text-sm font-medium mb-3">Preview Recording</p>
-                <audio
-                  ref={audioRef}
-                  src={audioUrl}
-                  controls
-                  className="w-full"
-                />
-              </div>
-              
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="default"
-                  onClick={handleTranscribe}
-                  disabled={isTranscribing}
-                  className="flex-1 font-semibold"
-                >
-                  {isTranscribing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Transcribing...
-                    </>
-                  ) : (
-                    "Transcribe to Text"
-                  )}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={discardRecording}
-                  disabled={isTranscribing}
-                  className="font-semibold border-2"
-                >
-                  Re-record
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       <div className="space-y-2">
         <Label htmlFor="title">Title</Label>
         <Input
@@ -498,7 +364,66 @@ const ComplaintForm = ({ onSuccess }: ComplaintFormProps) => {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="description">Description</Label>
+          <div className="flex items-center gap-2">
+            {!isRecording && (
+              <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                <SelectTrigger className="w-[120px] h-8 text-xs border-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {languages.map((lang) => (
+                    <SelectItem key={lang.code} value={lang.code}>
+                      {lang.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Button
+              type="button"
+              size="sm"
+              variant={isRecording ? "destructive" : "outline"}
+              onClick={isRecording ? stopRecording : startRecording}
+              disabled={isTranscribing}
+              className="h-8"
+            >
+              {isTranscribing ? (
+                <>
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  <span className="text-xs">Transcribing...</span>
+                </>
+              ) : isRecording ? (
+                <>
+                  <Square className="h-3 w-3 mr-1" />
+                  <span className="text-xs">Stop</span>
+                </>
+              ) : (
+                <>
+                  <Mic className="h-3 w-3 mr-1" />
+                  <span className="text-xs">Add Voice</span>
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+        
+        {isRecording && (
+          <div className="space-y-2 animate-in fade-in-0 slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground p-2 bg-muted/50 rounded">
+              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+              Recording... Click "Stop" when done
+            </div>
+            <div className="relative">
+              <canvas
+                ref={canvasRef}
+                className="w-full h-16 rounded border-2 bg-muted"
+              />
+            </div>
+          </div>
+        )}
+        
         <Textarea
           id="description"
           placeholder="Provide detailed information about your complaint..."
