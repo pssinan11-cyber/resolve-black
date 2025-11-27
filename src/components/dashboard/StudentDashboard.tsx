@@ -84,7 +84,7 @@ const StudentDashboard = () => {
             .from('complaints')
             .select('title, student_id')
             .eq('id', newComment.complaint_id)
-            .single();
+            .maybeSingle();
           
           if (complaint && complaint.student_id === user?.id && newComment.is_admin_reply) {
             toast.info(

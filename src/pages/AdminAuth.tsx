@@ -69,7 +69,7 @@ const AdminAuth = () => {
           .from('profiles')
           .select('full_name')
           .eq('id', user?.id)
-          .single();
+          .maybeSingle();
 
         // Play welcome sound
         playWelcomeSound();

@@ -41,7 +41,7 @@ const AdminDashboard = () => {
             .from('profiles')
             .select('full_name')
             .eq('id', newComplaint.student_id)
-            .single();
+            .maybeSingle();
           
           const severityEmoji = {
             urgent: '🚨',
@@ -115,7 +115,7 @@ const AdminDashboard = () => {
               .from('complaints')
               .select('title, severity')
               .eq('id', newComment.complaint_id)
-              .single();
+              .maybeSingle();
             
             if (soundEnabled && complaint?.severity === 'urgent') {
               playSound('high');

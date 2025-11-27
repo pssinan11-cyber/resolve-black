@@ -66,7 +66,7 @@ const AdminComplaintDetails = ({ complaint, onBack, onUpdate }: AdminComplaintDe
       
       const { data, error } = await supabase
         .from("comments")
-        .select("*, profiles(full_name)")
+        .select("*, profiles!inner(full_name)")
         .eq("complaint_id", complaint.id)
         .order("created_at", { ascending: true });
 
