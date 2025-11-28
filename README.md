@@ -1,5 +1,5 @@
 # 🎯 Brototype Resolve
-
+url https://resolve-mono.lovable.app
 A minimalist, AI-powered complaint management system designed for educational institutions. Built with a focus on clean design, security, and intelligent automation.
 
 ![Brototype Resolve](https://img.shields.io/badge/status-production-brightgreen)
